@@ -55,7 +55,7 @@ export const login = catchAsync(async (req, res, next) => {
   res
     .cookie("accessToken", accessToken, accessCookieOptions)
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
-    .status(200)
+    .status(202)
     .json({
       status: "success",
       message: "Logged in successfully",
@@ -95,7 +95,10 @@ export const logout = catchAsync(async (req, res, next) => {
 export const refreshAccessToken = catchAsync(async (req, res, next) => {
   const token = req.cookies.refreshToken;
   if (!token) return next(new AppError("please login again", 401));
-  const decoded = jwt.verify(token, process.env.JWT_REFRESH_TOKEN_SECRET);
+  const decoded = await promisify(jwt.verify)(
+    token,
+    process.env.JWT_REFRESH_TOKEN_SECRET,
+  );
   const user = await User.findById(decoded.id);
   if (!user) return next(new AppError("please login again", 401));
   const hashtoken = crypto.createHash("sha256").update(token).digest("hex");
@@ -108,7 +111,7 @@ export const refreshAccessToken = catchAsync(async (req, res, next) => {
       expiresIn: process.env.JWT__ACCESS_TOKEN_EXPIRES_IN,
     },
   );
-  res.cookie("accessToken", accessToken, accessCookieOptions).status(200).json({
+  res.cookie("accessToken", accessToken, accessCookieOptions).status(201).json({
     status: "success",
   });
 });
@@ -254,5 +257,35 @@ export const verifyOTP = catchAsync(async (req, res, next) => {
     .status(200)
     .json({
       status: "success",
+    });
+});
+export const resetPassword = catchAsync(async (req, res, next) => {
+  const password = req.body.password;
+  const resetToken = req.cookies.resetToken;
+  console.log(resetToken);
+  if (!resetToken)
+    return next(new AppError("something wrong verify otp again", 400));
+  const decoded = await promisify(jwt.verify)(
+    resetToken,
+    process.env.JWT_RESET_PASSWORD_SECRET,
+  );
+  const user = await User.findById(decoded.id);
+  if (!user) return next(new AppError("something wrong verify otp again", 400));
+  user.password = password;
+  user.passwordResetToken = undefined;
+  user.ResetTokenExpiration = undefined;
+  user.refreshToken = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  res
+    .cookie("resetToken", "", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    })
+    .status(200)
+    .json({
+      status: "success",
+      message: "password changed successfuly please login ",
     });
 });
