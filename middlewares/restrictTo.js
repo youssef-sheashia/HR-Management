@@ -1,9 +1,9 @@
-import AppError from "../utils/appError";
-import catchAsync from "../utils/catchAsync";
+import AppError from "../utils/appError.js";
+import catchAsync from "../utils/catchAsync.js";
 
 const restrictTo = (...allowed) => {
   return (req, res, next) => {
-    if (!allowed.includes(req.user.rule)) {
+    if (!allowed.includes(req.user.role)) {
       return next(
         new AppError("you do not have the permission to do that action", 403),
       );
@@ -11,3 +11,4 @@ const restrictTo = (...allowed) => {
     next();
   };
 };
+export default restrictTo;

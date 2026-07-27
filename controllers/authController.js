@@ -15,7 +15,7 @@ const accessCookieOptions = {
 
 export const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+password");
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError("Incorrect email or password", 401));
   }
@@ -61,8 +61,8 @@ export const login = catchAsync(async (req, res, next) => {
       message: "Logged in successfully",
       data: {
         user: {
+          name: `${user.firstName} ${user.lastName}`,
           id: user._id,
-          name: user.name,
           email: user.email,
           role: user.role,
         },
