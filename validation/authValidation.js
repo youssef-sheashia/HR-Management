@@ -1,6 +1,6 @@
 import { z } from "zod";
 import express from "express";
-const passwordSchema = z
+export const passwordSchema = z
   .string({
     required_error: "password is required",
     invalid_type_error: "password must be a string",

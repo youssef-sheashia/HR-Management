@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-const userShcema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
@@ -23,17 +23,17 @@ const userShcema = new mongoose.Schema(
       type: String,
       required: true,
       min: 6,
+      select: false,
     },
     profileImg: String,
-    rule: {
+    role: {
       type: String,
       enum: ["admin", "manager", "hr", "employee", "security"],
-      required: [true, "rule is required"],
+      required: [true, "role is required"],
     },
     refreshToken: {
       type: String,
     },
-    isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
     changedPasswordAt: Date,
     passwordResetToken: String,
@@ -42,11 +42,34 @@ const userShcema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-userShcema.methods.correctPassword = async function (
+userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword,
 ) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
-const User = mongoose.model("User", userShcema);
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+
+  this.password = await bcrypt.hash(this.password, 12);
+});
+userSchema.pre("save", function () {
+  if (!this.isModified("password") || this.isNew) return;
+
+  this.changedPasswordAt = Date.now() - 1000;
+});
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      this.changedPasswordAt.getTime() / 1000,
+      10,
+    );
+
+    return JWTTimestamp < changedTimestamp;
+  }
+
+  return false;
+};
+
+const User = mongoose.model("User", userSchema);
 export default User;
