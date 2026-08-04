@@ -3,6 +3,7 @@ import User from "../models/userModel.js";
 import catchAsync from "../utils/catchAsync.js";
 import mongoose from "mongoose";
 import AppError from "../utils/appError.js";
+import AggregateFeatures from "../utils/aggregateFeatures.js";
 export const createEmployee = catchAsync(async (req, res, next) => {
   const { firstName, lastName, email, password, role, ...others } = req.body;
   const session = await mongoose.startSession();
@@ -73,17 +74,17 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
     {
       $unwind: "$user",
     },
-    {
-      $lookup: {
-        from: "departments",
-        localField: "department",
-        foreignField: "_id",
-        as: "department",
-      },
-    },
-    {
-      $unwind: "$department",
-    },
+    // {
+    //   $lookup: {
+    //     from: "departments",
+    //     localField: "department",
+    //     foreignField: "_id",
+    //     as: "department",
+    //   },
+    // },
+    // {
+    //   $unwind: "$department",
+    // },
     {
       $match: {
         "user.active": true,
@@ -97,6 +98,7 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
         "user.changedPasswordAt": 0,
         "user.lastLoginAt": 0,
         "user.refreshToken": 0,
+        "user.password": 0,
       },
     },
   ];
@@ -106,8 +108,11 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
         "department.manager": new mongoose.Types.ObjectId(req.user.id),
       },
     });
-  const employees = await Employee.aggregate(piplinee);
+  const features = new AggregateFeatures(pipeline, req.query);
 
+  features.filter().sort().limitFields().paginate();
+
+  const employees = await Employee.aggregate(features.pipeline);
   res.status(200).json({
     status: "success",
     results: employees.length,
