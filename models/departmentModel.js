@@ -8,10 +8,10 @@ const departmentSchema = new mongoose.Schema({
   manager: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    ref: "user",
+    ref: "User",
   },
 });
-departmentSchema.pre(/^find/, () => {
+departmentSchema.pre(/^find/, function () {
   this.populate({ path: "manager", select: "firstName lastName email" });
 });
 const Department = mongoose.model("Department", departmentSchema);

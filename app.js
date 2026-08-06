@@ -4,11 +4,13 @@ import globalError from "./controllers/globalErrorHandeler.js";
 import userRoute from "./routes/userRoute.js";
 import employeeRoute from "./routes/employeeRoute.js";
 import AppError from "./utils/appError.js";
+import departmentRoute from "./routes/departmentRoute.js";
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/employees", employeeRoute);
+app.use("/api/v1/department", departmentRoute);
 app.use((req, res, next) => {
   next(new AppError("this url not found", 404));
 });

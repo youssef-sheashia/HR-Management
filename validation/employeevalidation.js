@@ -22,7 +22,7 @@ export const createEmployeeSchema = z.object({
   department: z.string({ error: "department is requierd" }),
   jobtitle: z.string().optional(),
   contractType: z.string().optional(),
-  hireDate: z.date(),
+  hireDate: z.coerce.date(),
   salaryGrade: z.string(),
   baseSalary: number().min(2000),
   allowances: z

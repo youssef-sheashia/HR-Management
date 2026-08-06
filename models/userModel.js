@@ -5,14 +5,14 @@ const userSchema = new mongoose.Schema(
     firstName: {
       type: String,
       required: [true, "first Name is required"],
-      min: 3,
-      max: 12,
+      minlength: 3,
+      maxlength: 12,
     },
     lastName: {
       type: String,
       required: [true, "first Name is required"],
-      min: 3,
-      max: 12,
+      minlength: 3,
+      maxlength: 12,
     },
     email: {
       type: String,
@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
     profileImg: String,
     role: {
       type: String,
-      enum: ["admin", "manager", "hr", "employee", "security"],
+      enum: ["admin", "manger", "hr", "employee", "security"],
       required: [true, "role is required"],
     },
     refreshToken: {
@@ -59,7 +59,7 @@ userSchema.pre("save", function () {
   this.changedPasswordAt = Date.now() - 1000;
 });
 userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
-  if (this.passwordChangedAt) {
+  if (this.changedPasswordAt) {
     const changedTimestamp = parseInt(
       this.changedPasswordAt.getTime() / 1000,
       10,
