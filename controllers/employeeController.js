@@ -51,7 +51,7 @@ export const getOneEmployee = catchAsync(async (req, res, next) => {
     })
     .populate({
       path: "department",
-      match: req.user.role === "manager" ? { manger: req.user.id } : {},
+      match: req.user.role === "manager" ? { manager: req.user.id } : {},
     });
   if (!employee || !employee.user || !employee.department) {
     return next(new AppError("Employee not found", 404));
@@ -62,7 +62,7 @@ export const getOneEmployee = catchAsync(async (req, res, next) => {
   });
 });
 export const getAllEmployees = catchAsync(async (req, res, next) => {
-  const piplinee = [
+  const pipeline = [
     {
       $lookup: {
         from: "users",
@@ -74,17 +74,17 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
     {
       $unwind: "$user",
     },
-    // {
-    //   $lookup: {
-    //     from: "departments",
-    //     localField: "department",
-    //     foreignField: "_id",
-    //     as: "department",
-    //   },
-    // },
-    // {
-    //   $unwind: "$department",
-    // },
+    {
+      $lookup: {
+        from: "departments",
+        localField: "department",
+        foreignField: "_id",
+        as: "department",
+      },
+    },
+    {
+      $unwind: "$department",
+    },
     {
       $match: {
         "user.active": true,
@@ -173,7 +173,7 @@ export const deleteEmployee = catchAsync(async (req, res, next) => {
     const employee = await Employee.findOneAndUpdate(
       { user: req.params.id },
       { status: "terminated" },
-      { sessionn },
+      { session },
     );
     if (!user || !employee) {
       throw new AppError("Employee not found", 404);

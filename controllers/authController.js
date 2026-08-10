@@ -55,7 +55,7 @@ export const login = catchAsync(async (req, res, next) => {
   res
     .cookie("accessToken", accessToken, accessCookieOptions)
     .cookie("refreshToken", refreshToken, refreshCookieOptions)
-    .status(202)
+    .status(200)
     .json({
       status: "success",
       message: "Logged in successfully",
