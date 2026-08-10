@@ -62,7 +62,7 @@ export const getOneEmployee = catchAsync(async (req, res, next) => {
   });
 });
 export const getAllEmployees = catchAsync(async (req, res, next) => {
-  const piplinee = [
+  const pipeline = [
     {
       $lookup: {
         from: "users",
