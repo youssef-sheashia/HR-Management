@@ -1,7 +1,6 @@
-import { date } from "zod";
-import Department from "../models/departmentModel";
-import AppError from "../utils/appError";
-import catchAsync from "../utils/catchAsync";
+import Department from "../models/departmentModel.js";
+import AppError from "../utils/appError.js";
+import catchAsync from "../utils/catchAsync.js";
 export const createDepartment = catchAsync(async (req, res, next) => {
   const department = await Department.create(req.body);
   res.status(200).json({
