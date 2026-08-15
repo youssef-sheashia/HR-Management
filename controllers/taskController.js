@@ -132,3 +132,19 @@ export const updateTaskStatus = catchAsync(async (req, res, next) => {
     },
   });
 });
+export const addComment = catchAsync(async (req, res, next) => {
+  const task = await Task.findById(req.query.id);
+  if (!task) return next(new AppError("task not found", 404));
+  task.comments.push({
+    authorId: req.user.id,
+    text: req.body.text,
+  });
+  task.save();
+  res.status(200).json({
+    status: "success",
+    message: "comment added",
+    data: {
+      task,
+    },
+  });
+});
