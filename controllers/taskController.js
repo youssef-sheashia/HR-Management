@@ -36,7 +36,7 @@ export const createTask = catchAsync(async (req, res, next) => {
   });
 });
 
-export const getAllTask = catchAsync(async (req, res, next) => {
+export const getAllTasks = catchAsync(async (req, res, next) => {
   const pipline = [
     {
       $lockup: {
