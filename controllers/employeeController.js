@@ -71,6 +71,7 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
         as: "user",
       },
     },
+
     {
       $unwind: "$user",
     },
@@ -92,34 +93,47 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
     },
 
     {
-      $project: {
-        "user.ResetTokenExpiration": 0,
-        "user.passwordResetToken": 0,
-        "user.changedPasswordAt": 0,
-        "user.lastLoginAt": 0,
-        "user.refreshToken": 0,
-        "user.password": 0,
+      $lookup: {
+        from: "departments",
+        localField: "department",
+        foreignField: "_id",
+        as: "department",
       },
     },
+
+    {
+      $unwind: "$department",
+    },
   ];
-  if (req.user.role === "manager")
-    piplinee.push({
+
+  if (req.user.role === "manager") {
+    pipeline.push({
       $match: {
         "department.manager": new mongoose.Types.ObjectId(req.user.id),
       },
     });
+  }
+
   const features = new AggregateFeatures(pipeline, req.query);
 
-  features.filter().sort().limitFields().paginate();
+  features
+    .filter(["status", "contractType", "salaryGrade", "baseSalary"])
+    .search(["user.firstName", "user.lastName", "nationalId", "jobTitle"])
+    .sort()
+    .paginate();
 
-  const employees = await Employee.aggregate(features.pipeline);
-  res.status(200).json({
-    status: "success",
-    results: employees.length,
-    data: {
-      employees,
+  features.pipeline.push({
+    $project: {
+      "user.password": 0,
+      "user.refreshToken": 0,
+      "user.passwordResetToken": 0,
+      "user.ResetTokenExpiration": 0,
+      "user.changedPasswordAt": 0,
+      "user.lastLoginAt": 0,
     },
   });
+
+  const employees = await Employee.aggregate(features.pipeline);
 });
 export const updateEmployee = catchAsync(async (req, res, next) => {
   const { firstName, lastName, profileImg, role, ...employeeData } = req.body;
