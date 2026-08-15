@@ -76,11 +76,25 @@ export const getAllTask = catchAsync(async (req, res, next) => {
     },
   ];
   if (req.user.rule === "manager") {
-    pipline.shift({
+    pipline.unshift({
       $match: {
         assigendBy: new mongoose.Types.ObjectId(req.user.id),
       },
     });
   }
   const features = new AggregateFeatures(pipline, req.query);
+
+  features
+    .filter(["status", "department.name"])
+    .search(["employee.firstName", "employee.lastName", "title"])
+    .sort()
+    .limitFields()
+    .paginate();
+  const tasks = await Task.aggregate(features.pipeline);
+  res.status(200).json({
+    status: "success",
+    data: {
+      tasks,
+    },
+  });
 });
