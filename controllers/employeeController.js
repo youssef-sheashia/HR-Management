@@ -110,7 +110,12 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
     });
   const features = new AggregateFeatures(pipeline, req.query);
 
-  features.filter().sort().limitFields().paginate();
+  features
+    .filter(["status", "contractType", "salaryGrade", "baseSalary"])
+    .search(["user.firstName", "user.lastName", "nationalId", "jobTitle"])
+    .sort()
+    .limitFields()
+    .paginate();
 
   const employees = await Employee.aggregate(features.pipeline);
   res.status(200).json({
