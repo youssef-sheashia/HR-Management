@@ -4,6 +4,7 @@ import Department from "../models/departmentModel.js";
 import Task from "../models/taskModel.js";
 import AggregateFeatures from "../utils/aggregateFeatures.js";
 import APIFeatures from "../utils/apiFeatures.js";
+import { ca } from "zod/v4/locales";
 
 export const createTask = catchAsync(async (req, res, next) => {
   const { title, description, deadline, assignedTo } = req.body;
@@ -114,6 +115,20 @@ export const getMyTasks = catchAsync(async (req, res, next) => {
     length: tasks.length,
     data: {
       tasks,
+    },
+  });
+});
+export const updateTaskStatus = catchAsync(async (req, res, next) => {
+  const task = await Task.findById(req.query.id);
+  if (task.status === "completed")
+    return next(new AppError("task has completed", 403));
+  task.status = req.body.status;
+  task.save();
+  res.status(200).json({
+    status: "success",
+    message: "task status changed",
+    data: {
+      task,
     },
   });
 });
