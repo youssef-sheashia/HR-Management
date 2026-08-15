@@ -35,5 +35,10 @@ const taskSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+taskSchema.pre(/^find/, function () {
+  this.populate({ path: "assignedTo", select: "firstName lastName emsil" })
+    .populate({ path: "assignedBy", select: "firstName lastName email" })
+    .populate({ path: "department", select: "name" });
+});
 const Task = mongoose.model("Task", taskSchema);
 export default Task;

@@ -3,6 +3,7 @@ import AppError from "../utils/appError.js";
 import Department from "../models/departmentModel.js";
 import Task from "../models/taskModel.js";
 import AggregateFeatures from "../utils/aggregateFeatures.js";
+import APIFeatures from "../utils/apiFeatures.js";
 
 export const createTask = catchAsync(async (req, res, next) => {
   const { title, description, deadline, assignedTo } = req.body;
@@ -93,6 +94,24 @@ export const getAllTasks = catchAsync(async (req, res, next) => {
   const tasks = await Task.aggregate(features.pipeline);
   res.status(200).json({
     status: "success",
+    data: {
+      tasks,
+    },
+  });
+});
+export const getMyTasks = catchAsync(async (req, res, next) => {
+  const features = new APIFeatures(
+    Task.find({ assignedTo: req.user.id }),
+    req.query,
+  )
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
+  const tasks = await features.query;
+  res.status(200).json({
+    status: "success",
+    length: tasks.length,
     data: {
       tasks,
     },
