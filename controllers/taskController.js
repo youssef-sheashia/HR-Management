@@ -1,11 +1,11 @@
 import catchAsync from "../utils/catchAsync.js";
 import AppError from "../utils/appError.js";
+import mongoose from "mongoose";
 import Department from "../models/departmentModel.js";
 import Task from "../models/taskModel.js";
+import Employee from "../models/employeeModel.js";
 import AggregateFeatures from "../utils/aggregateFeatures.js";
 import APIFeatures from "../utils/apiFeatures.js";
-import { ca } from "zod/v4/locales";
-
 export const createTask = catchAsync(async (req, res, next) => {
   const { title, description, deadline, assignedTo } = req.body;
   const department = await Department.findOne({ manager: req.user.id });
@@ -29,7 +29,7 @@ export const createTask = catchAsync(async (req, res, next) => {
     description,
   });
 
-  res.status(200).json({
+  res.status(201).json({
     status: "success",
     message: "task created successfuly",
     data: {
@@ -41,28 +41,39 @@ export const createTask = catchAsync(async (req, res, next) => {
 export const getAllTasks = catchAsync(async (req, res, next) => {
   const pipline = [
     {
-      $lockup: {
+      $lookup: {
         from: "users",
         localField: "assignedTo",
         foreignField: "_id",
         as: "employee",
       },
+    },
+    {
       $unwind: "$employee",
-      $lockup: {
+    },
+    {
+      $lookup: {
         from: "users",
         localField: "assignedBy",
         foreignField: "_id",
         as: "manager",
       },
+    },
+    {
       $unwind: "$manager",
-      lookup: {
+    },
+    {
+      $lookup: {
         from: "departments",
         localField: "department",
         foreignField: "_id",
         as: "department",
       },
+    },
+    {
       $unwind: "$department",
-
+    },
+    {
       $project: {
         title: 1,
         status: 1,
@@ -77,10 +88,10 @@ export const getAllTasks = catchAsync(async (req, res, next) => {
       },
     },
   ];
-  if (req.user.rule === "manager") {
+  if (req.user.role === "manager") {
     pipline.unshift({
       $match: {
-        assigendBy: new mongoose.Types.ObjectId(req.user.id),
+        assignedBy: new mongoose.Types.ObjectId(req.user.id),
       },
     });
   }
@@ -119,14 +130,36 @@ export const getMyTasks = catchAsync(async (req, res, next) => {
   });
 });
 export const updateTaskStatus = catchAsync(async (req, res, next) => {
-  const task = await Task.findById(req.query.id);
+  const task = await Task.findById(req.params.id);
+
+  if (!task) return next(new AppError("task not found", 404));
+  if (task.assignedTo._id.toString() !== req.user.id)
+    return next(new AppError("you are not the owner of this task", 403));
   if (task.status === "completed")
     return next(new AppError("task has completed", 403));
   task.status = req.body.status;
-  task.save();
+  await task.save();
   res.status(200).json({
     status: "success",
     message: "task status changed",
+    data: {
+      task,
+    },
+  });
+});
+export const addComment = catchAsync(async (req, res, next) => {
+  const task = await Task.findById(req.params.id);
+  if (!task) return next(new AppError("task not found", 404));
+  if (task.assignedTo._id.toString() !== req.user.id)
+    return next(new AppError("you are not the owner of this task", 403));
+  task.comments.push({
+    authorId: req.user.id,
+    text: req.body.text,
+  });
+  await task.save();
+  res.status(200).json({
+    status: "success",
+    message: "comment added",
     data: {
       task,
     },
