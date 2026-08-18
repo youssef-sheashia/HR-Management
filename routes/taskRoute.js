@@ -12,7 +12,7 @@ const router = express.Router();
 router.use(protect);
 router.get("/", restrictTo("admin", "manager"), getAllTasks);
 router.post("/", restrictTo("manager"), createTask);
-router.get("/my", restrictTo("employee"));
+router.get("/my", restrictTo("employee"), getMyTasks);
 router.patch("/:id/status", restrictTo("employee"), updateTaskStatus);
 router.patch("/:id/comments", restrictTo("employee", "manager"), addComment);
 export default router;
