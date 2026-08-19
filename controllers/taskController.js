@@ -6,6 +6,7 @@ import Task from "../models/taskModel.js";
 import Employee from "../models/employeeModel.js";
 import AggregateFeatures from "../utils/aggregateFeatures.js";
 import APIFeatures from "../utils/apiFeatures.js";
+import Notification from "../models/notificationModel.js";
 export const createTask = catchAsync(async (req, res, next) => {
   const { title, description, deadline, assignedTo } = req.body;
   const department = await Department.findOne({ manager: req.user.id });
@@ -20,14 +21,57 @@ export const createTask = catchAsync(async (req, res, next) => {
       ),
     );
 
-  const task = await Task.create({
-    assignedBy: req.user.id,
-    assignedTo: employee.user,
-    department: department.id,
-    title,
-    deadline,
-    description,
-  });
+  const session = await mongoose.startSession();
+  let task, notification;
+
+  try {
+    session.startTransaction();
+
+    const taskDocs = await Task.create(
+      [
+        {
+          assignedBy: req.user.id,
+          assignedTo: employee.id,
+          department: department.id,
+          title,
+          description,
+          deadline,
+        },
+      ],
+      { session },
+    );
+    task = taskDocs[0];
+
+    const notificationDocs = await Notification.create(
+      [
+        {
+          recipient: employee.user,
+          type: "task_assigned",
+          message: `You have been assigned a new task: "${title}"`,
+          relatedId: task._id,
+        },
+      ],
+      { session },
+    );
+    notification = notificationDocs[0];
+
+    await session.commitTransaction();
+  } catch (err) {
+    await session.abortTransaction();
+    return next(err);
+  } finally {
+    await session.endSession();
+  }
+
+  try {
+    req.app
+      .get("io")
+      .to(employee.user.toString())
+      .emit("notification", notification);
+  } catch (err) {
+    console.error("socket emit failed:", err);
+  }
+  it("notification", notification);
 
   res.status(201).json({
     status: "success",
