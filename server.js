@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import http from "http";
-import { server } from "socket.io";
+import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 dotenv.config({ path: "./config.env" });
 import Mongoose from "mongoose";
@@ -23,7 +23,7 @@ async function startServer() {
   ////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!///////////////////////////
   const port = process.env.PORT || 3000;
   const httpServer = http.createServer(app);
-  const io = new server(httpServer, {
+  const io = new Server(httpServer, {
     cors: {
       origin: process.env.CLIENT_URL,
       credentials: true,
