@@ -36,7 +36,6 @@ export const createTask = catchAsync(async (req, res, next) => {
           title,
           description,
           deadline,
-          priority,
         },
       ],
       { session },
@@ -64,10 +63,15 @@ export const createTask = catchAsync(async (req, res, next) => {
     await session.endSession();
   }
 
-  req.app
-    .get("io")
-    .to(employee.user.toString())
-    .emit("notification", notification);
+  try {
+    req.app
+      .get("io")
+      .to(employee.user.toString())
+      .emit("notification", notification);
+  } catch (err) {
+    console.error("socket emit failed:", err);
+  }
+  it("notification", notification);
 
   res.status(201).json({
     status: "success",
