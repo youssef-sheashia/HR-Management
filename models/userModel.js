@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
     profileImg: String,
     role: {
       type: String,
-      enum: ["admin", "manger", "hr", "employee", "security"],
+      enum: ["admin", "manager", "hr", "employee", "security"],
       required: [true, "role is required"],
     },
     refreshToken: {
