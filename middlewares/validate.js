@@ -27,9 +27,10 @@ export const validateQuery = (schema) => (req, res, next) => {
     return next(new AppError(messages, 400));
   }
 
-  req.validatedQuery = result.data;
+  req.query = result.data;
   next();
 };
+
 export const validateIdParams = (req, res, next) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id))
