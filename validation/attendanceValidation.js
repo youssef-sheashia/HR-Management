@@ -11,3 +11,8 @@ export const attendanceSchema = z.object({
   checkIn: z.coerce.date(),
   checkOut: z.coerce.date().optional(),
 });
+export const attendanceQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().optional(),
+  sort: z.string().optional(),
+});
