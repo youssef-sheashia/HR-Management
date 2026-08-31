@@ -304,7 +304,11 @@ export const permissionActionByHR = catchAsync(async (req, res, next) => {
 });
 export const deletePermission = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const permission = await Permission.findByIdAndDelete(id);
+  const permission = await Permission.findOneAndDelete({
+    _id: id,
+    employeeID: rq.user.id,
+    status: "pending",
+  });
   if (!permission) {
     return next(new AppError("Permission not found", 404));
   }
