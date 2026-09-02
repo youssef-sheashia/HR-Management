@@ -48,20 +48,6 @@ const payrollSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
-      other: {
-        type: Number,
-        default: 0,
-      },
-    },
-
-    grossSalary: {
-      type: Number,
-      required: true,
-    },
-
-    totalDeductions: {
-      type: Number,
-      required: true,
     },
 
     netSalary: {
