@@ -4,6 +4,7 @@ import {
   markAttendance,
   updateAttendance,
   getMyAttendance,
+  getEmployeesForAttendance,
 } from "../controllers/attendanceController.js";
 import restrictTo from "../middlewares/restrictTo.js";
 import protect from "../middlewares/protect.js";
@@ -25,6 +26,7 @@ router.get(
   validateQuery(attendanceQuerySchema),
   getAllAttendance,
 );
+router.get("/employee", restrictTo("security"), getEmployeesForAttendance);
 router.post(
   "/",
   restrictTo("security"),

@@ -3,6 +3,38 @@ import catchAsync from "../utils/catchAsync.js";
 import AppError from "../utils/appError.js";
 import APIFeatures from "../utils/apiFeatures.js";
 import User from "../models/userModel.js";
+import Permission from "../models/permissionModel.js";
+export const getEmployeesForAttendance = catchAsync(async (req, res, next) => {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const employeesHavePermission = await Permission.find({
+    status: "approved",
+    startDate: { $lte: endOfDay },
+    endDate: { $gte: startOfDay },
+  }).select("employee");
+
+  const employeesWithPermission = employeesHavePermission.map((permission) =>
+    permission.employee.toString(),
+  );
+
+  const employees = await User.find({
+    role: "employee",
+    active: true,
+    _id: { $nin: employeesWithPermission },
+  });
+
+  res.status(200).json({
+    status: "success",
+    results: employees.length,
+    data: {
+      employees,
+    },
+  });
+});
 export const markAttendance = catchAsync(async (req, res, next) => {
   const { employeeID, checkIn } = req.body;
 
