@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 const payrollSchema = new mongoose.Schema(
   {
     employee: {
@@ -57,7 +58,7 @@ const payrollSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["draft", "processed", "paid"],
+      enum: ["draft", "paid"],
       default: "draft",
     },
 

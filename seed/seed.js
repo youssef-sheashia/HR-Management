@@ -7,6 +7,8 @@ import Department from "../models/departmentModel.js";
 import Task from "../models/taskModel.js";
 import Attendance from "../models/attendanceModel.js";
 import Notification from "../models/notificationModel.js";
+import Permission from "../models/permissionModel.js";
+import Payroll from "../models/payrollModel.js";
 
 dotenv.config({ path: "./config.env" });
 
@@ -34,6 +36,8 @@ const connectDB = async () => {
 const clearDatabase = async () => {
   console.log("🗑️ Clearing old data...");
 
+  await Payroll.deleteMany({});
+  await Permission.deleteMany({});
   await Notification.deleteMany({});
   await Attendance.deleteMany({});
   await Task.deleteMany({});
@@ -51,10 +55,6 @@ const clearDatabase = async () => {
 const createUsers = async () => {
   console.log("👤 Creating users...");
 
-  // =========================
-  // Admin
-  // =========================
-
   const admin = await User.create({
     firstName: "Ahmed",
     lastName: "Admin",
@@ -62,10 +62,6 @@ const createUsers = async () => {
     password: "12345678",
     role: "admin",
   });
-
-  // =========================
-  // HR
-  // =========================
 
   const hrUsers = await User.create([
     {
@@ -83,10 +79,6 @@ const createUsers = async () => {
       role: "hr",
     },
   ]);
-
-  // =========================
-  // Managers
-  // =========================
 
   const managerUsers = await User.create([
     {
@@ -119,10 +111,6 @@ const createUsers = async () => {
     },
   ]);
 
-  // =========================
-  // Security
-  // =========================
-
   const securityUsers = await User.create([
     {
       firstName: "Hany",
@@ -146,10 +134,6 @@ const createUsers = async () => {
       role: "security",
     },
   ]);
-
-  // =========================
-  // Employees
-  // =========================
 
   const employeeUsers = await User.create([
     {
@@ -296,13 +280,7 @@ const createUsers = async () => {
 
   console.log("✅ Users created");
 
-  return {
-    admin,
-    hrUsers,
-    managerUsers,
-    securityUsers,
-    employeeUsers,
-  };
+  return { admin, hrUsers, managerUsers, securityUsers, employeeUsers };
 };
 
 // ========================================
@@ -313,22 +291,10 @@ const createDepartments = async (managerUsers) => {
   console.log("🏢 Creating departments...");
 
   const departments = await Department.create([
-    {
-      name: "IT",
-      manager: managerUsers[0]._id,
-    },
-    {
-      name: "Human Resources",
-      manager: managerUsers[1]._id,
-    },
-    {
-      name: "Finance",
-      manager: managerUsers[2]._id,
-    },
-    {
-      name: "Marketing",
-      manager: managerUsers[3]._id,
-    },
+    { name: "IT", manager: managerUsers[0]._id },
+    { name: "Human Resources", manager: managerUsers[1]._id },
+    { name: "Finance", manager: managerUsers[2]._id },
+    { name: "Marketing", manager: managerUsers[3]._id },
   ]);
 
   console.log("✅ Departments created");
@@ -348,11 +314,8 @@ const createEmployees = async (employeeUsers, departments) => {
 
     return {
       user: user._id,
-
       nationalId: `29${String(index + 1).padStart(12, "0")}`,
-
       department: department._id,
-
       jobTitle:
         index % 4 === 0
           ? "Backend Developer"
@@ -361,38 +324,30 @@ const createEmployees = async (employeeUsers, departments) => {
             : index % 4 === 2
               ? "Software Engineer"
               : "System Administrator",
-
       contractType:
         index % 3 === 0
           ? "full-time"
           : index % 3 === 1
             ? "part-time"
             : "contract",
-
       hireDate: new Date(2023 + (index % 3), index % 12, (index % 25) + 1),
-
       salaryGrade: `G${(index % 6) + 1}`,
-
       baseSalary: 8000 + index * 500,
-
       allowances: {
         transport: 500 + index * 50,
         housing: 1500 + index * 100,
         medical: 300,
       },
-
       bankDetails: {
         bankName: "Banque Misr",
         accountNumber: `1234567890${String(index).padStart(2, "0")}`,
         iban: `EG380019000500000000263180${String(index).padStart(2, "4")}`,
       },
-
       emergencyContact: {
         name: `Emergency Contact ${index + 1}`,
         phone: `+2010012345${String(index).padStart(2, "2")}`,
         relation: index % 2 === 0 ? "Brother" : "Father",
       },
-
       status: "active",
     };
   });
@@ -438,35 +393,23 @@ const createTasks = async (employeeUsers, managerUsers, departments) => {
 
   for (let i = 0; i < 50; i++) {
     const employee = employeeUsers[i % employeeUsers.length];
-
     const manager = managerUsers[i % managerUsers.length];
-
     const department = departments[i % departments.length];
-
     const statusArray = ["pending", "in progress", "completed"];
 
     tasksData.push({
       title: `${taskTitles[i % taskTitles.length]} #${i + 1}`,
-
       description:
         "Complete this task according to the project requirements and make sure all tests are passing.",
-
       status: statusArray[i % statusArray.length],
-
       assignedTo: employee._id,
-
       assignedBy: manager._id,
-
       deadline: new Date(2026, 8, ((i * 2) % 25) + 1),
-
       department: department._id,
-
       comments: [
         {
           authorId: manager._id,
-
           text: "Please start working on this task.",
-
           createdAt: new Date(),
         },
       ],
@@ -488,7 +431,6 @@ const createAttendance = async (employeeUsers, securityUsers) => {
   console.log("⏰ Creating attendance records...");
 
   const attendanceData = [];
-
   const statuses = ["present", "present", "present", "late", "absent"];
 
   for (
@@ -500,16 +442,12 @@ const createAttendance = async (employeeUsers, securityUsers) => {
 
     for (let day = 1; day <= 10; day++) {
       const date = new Date(2026, 7, day);
-
       const status = statuses[(employeeIndex + day) % statuses.length];
 
       const attendance = {
         employee: employee._id,
-
         date,
-
         status,
-
         markedBy: securityUsers[employeeIndex % securityUsers.length]._id,
       };
 
@@ -521,7 +459,6 @@ const createAttendance = async (employeeUsers, securityUsers) => {
           status === "late" ? 9 : 8,
           status === "late" ? 30 : 55,
         );
-
         attendance.checkOut = new Date(2026, 7, day, 17, 0);
       }
 
@@ -548,13 +485,9 @@ const createNotifications = async (employeeUsers, tasks) => {
   tasks.forEach((task, index) => {
     notificationsData.push({
       recipient: task.assignedTo,
-
       type: "task_assigned",
-
       message: `You have been assigned a new task: ${task.title}`,
-
       relatedId: task._id,
-
       read: index % 3 === 0,
     });
   });
@@ -567,33 +500,132 @@ const createNotifications = async (employeeUsers, tasks) => {
 };
 
 // ========================================
+// Create Permissions (Leave Requests)
+// ========================================
+
+const createPermissions = async (employeeUsers) => {
+  console.log("📝 Creating permission requests...");
+
+  const permissionsData = [];
+
+  const types = ["annual", "sick", "emergency", "unpaid"];
+  const statuses = ["pending", "manager_approved", "hr_approved", "rejected"];
+  const reasons = {
+    annual: "Family vacation",
+    sick: "Not feeling well, need rest",
+    emergency: "Family emergency",
+    unpaid: "Personal matters",
+  };
+
+  // give roughly half the employees a leave request, staggered so date ranges
+  // don't collide with the unique {employeeID, startDate, endDate} index
+  employeeUsers.forEach((employee, index) => {
+    if (index % 2 !== 0) return; // skip odd-indexed employees
+
+    const type = types[index % types.length];
+    const status = statuses[index % statuses.length];
+    const startDay = 15 + (index % 5);
+    const duration = type === "sick" ? 1 : type === "annual" ? 3 : 2;
+
+    permissionsData.push({
+      employeeID: employee._id,
+      type,
+      reason: reasons[type],
+      startDate: new Date(2026, 7, startDay),
+      endDate: new Date(2026, 7, startDay + duration),
+      status,
+    });
+  });
+
+  const permissions = await Permission.create(permissionsData);
+
+  console.log(`✅ ${permissions.length} permission requests created`);
+
+  return permissions;
+};
+
+// ========================================
+// Create Payroll
+// ========================================
+
+const createPayroll = async (employees, attendance) => {
+  console.log("💰 Creating payroll records...");
+
+  const month = 8; // August, matches the seeded attendance month
+  const year = 2026;
+
+  const lateDeductionPerOccurrence = 100;
+  const absenceDeductionPerDay = 300;
+
+  const payrollData = employees.map((employee) => {
+    const employeeAttendance = attendance.filter(
+      (a) => a.employee.toString() === employee.user.toString(),
+    );
+
+    const absenceCount = employeeAttendance.filter(
+      (a) => a.status === "absent",
+    ).length;
+    const lateCount = employeeAttendance.filter(
+      (a) => a.status === "late",
+    ).length;
+
+    const absenceDeduction = absenceCount * absenceDeductionPerDay;
+    const lateDeduction = lateCount * lateDeductionPerOccurrence;
+
+    const gross =
+      employee.baseSalary +
+      employee.allowances.transport +
+      employee.allowances.housing +
+      employee.allowances.medical;
+
+    const netSalary = gross - absenceDeduction - lateDeduction;
+
+    return {
+      employee: employee.user,
+      month,
+      year,
+      baseSalary: employee.baseSalary,
+      allowances: employee.allowances,
+      deductions: {
+        absence: absenceDeduction,
+        late: lateDeduction,
+      },
+      netSalary,
+      status: "draft",
+    };
+  });
+
+  const payroll = await Payroll.create(payrollData);
+
+  console.log(`✅ ${payroll.length} payroll records created`);
+
+  return payroll;
+};
+
+// ========================================
 // Main Seed Function
 // ========================================
 
 const seed = async () => {
   try {
     await connectDB();
-
     await clearDatabase();
 
     const users = await createUsers();
-
     const departments = await createDepartments(users.managerUsers);
-
     const employees = await createEmployees(users.employeeUsers, departments);
-
     const tasks = await createTasks(
       users.employeeUsers,
       users.managerUsers,
       departments,
     );
-
     const attendance = await createAttendance(
       users.employeeUsers,
       users.securityUsers,
     );
-
     const notifications = await createNotifications(users.employeeUsers, tasks);
+    const permissions = await createPermissions(users.employeeUsers);
+    const payroll = await createPayroll(employees, attendance);
 
     console.log("\n================================");
     console.log("🌱 SEED COMPLETED SUCCESSFULLY");
@@ -605,9 +637,10 @@ const seed = async () => {
     console.log(`Tasks: ${await Task.countDocuments()}`);
     console.log(`Attendance: ${await Attendance.countDocuments()}`);
     console.log(`Notifications: ${await Notification.countDocuments()}`);
+    console.log(`Permissions: ${await Permission.countDocuments()}`);
+    console.log(`Payroll: ${await Payroll.countDocuments()}`);
 
     await mongoose.connection.close();
-
     console.log("🔌 Database connection closed");
 
     process.exit(0);
@@ -616,7 +649,6 @@ const seed = async () => {
     console.error(error);
 
     await mongoose.connection.close();
-
     process.exit(1);
   }
 };

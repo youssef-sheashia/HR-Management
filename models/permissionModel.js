@@ -3,7 +3,7 @@ const permissionSchema = new mongoose.Schema(
   {
     employeeID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User ",
+      ref: "User",
       required: true,
     },
     type: {
@@ -36,10 +36,7 @@ permissionSchema.index(
   { unique: true },
 );
 permissionSchema.pre(/^find/, function () {
-  this.populate({
-    path: "employeeID",
-    select: "name email",
-  });
+  this.populate({ path: "employeeID", select: "firstName lastName email" });
 });
 const Permission = mongoose.model("Permission", permissionSchema);
 export default Permission;

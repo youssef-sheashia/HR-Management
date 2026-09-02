@@ -1,3 +1,5 @@
+import PDFDocument from "pdfkit";
+import mongoose from "mongoose";
 import catchAsync from "../utils/catchAsync.js";
 import Payroll from "../models/payrollModel.js";
 import AppError from "../utils/appError.js";
@@ -5,7 +7,6 @@ import aggregateFeaturs from "../utils/aggregateFeatures.js";
 import APIFeatures from "../utils/apiFeatures.js";
 import Employee from "../models/employeeModel.js";
 import Notification from "../models/notificationModel.js";
-import PDFDocument from "pdfkit";
 
 export const createPayrollForAllEmployees = catchAsync(
   async (req, res, next) => {
