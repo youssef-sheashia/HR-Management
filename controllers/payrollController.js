@@ -2,7 +2,10 @@ import catchAsync from "../utils/catchAsync.js";
 import Payroll from "../models/payrollModel.js";
 import AppError from "../utils/appError.js";
 import aggregateFeaturs from "../utils/aggregateFeatures.js";
+import APIFeatures from "../utils/apiFeatures.js";
 import Employee from "../models/employeeModel.js";
+import PDFDocument from "pdfkit";
+
 export const createPayrollForAllEmployees = catchAsync(
   async (req, res, next) => {
     const { month, year } = req.body;
@@ -88,7 +91,12 @@ export const createPayrollForAllEmployees = catchAsync(
   },
 );
 export const getMyPayslip = catchAsync(async (req, res, next) => {
-  const myPayslips = await Payroll.find({ employeeId: req.user.id });
+  const features = new APIFeatures(Payroll.find({ employee: req.user.id }), req.query)
+    .filter(['month', 'year'])
+    .sort()
+    .limitFields()
+    .paginate();
+    const myPayslips = await features.query;
   res.status(200).json({
     status: "success",
     data: {
@@ -156,4 +164,113 @@ export const getAllPayRecords = catchAsync(async (req, res, next) => {
       payrolls: payrollRecords,
     },
   });
+});
+
+export const downloadPayslip = catchAsync(async (req, res, next) => {
+  const payroll = await Payroll.findById(req.params.id)
+    .populate({
+      path: "employee",
+      populate: [
+        {
+          path: "user",
+          select: "firstName lastName email",
+        },
+        {
+          path: "department",
+          select: "name",
+        },
+      ],
+    });
+
+  if (!payroll) {
+    return next(new AppError("Payroll not found", 404));
+  }
+
+  if (
+    req.user.role === "employee" &&
+    payroll.employee.user._id.toString() !== req.user._id.toString()
+  ) {
+    return next(new AppError("You are not allowed to access this payslip", 403));
+  }
+
+  const doc = new PDFDocument();
+
+  res.setHeader("Content-Type", "application/pdf");
+
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="payslip-${payroll.month}-${payroll.year}.pdf"`
+  );
+
+  doc.pipe(res);
+
+  doc
+    .fontSize(20)
+    .text("PAYSLIP", { align: "center" });
+
+  doc.moveDown();
+
+  doc.fontSize(12);
+
+  doc.text(
+    `Employee: ${payroll.employee.user.firstName} ${payroll.employee.user.lastName}`
+  );
+
+  doc.text(`Email: ${payroll.employee.user.email}`);
+  doc.text(`Department: ${payroll.employee.department.name}`);
+
+  doc.moveDown();
+
+  doc.text(`Month: ${payroll.month}`);
+  doc.text(`Year: ${payroll.year}`);
+
+  doc.moveDown();
+
+  doc.fontSize(14).text("Salary Details");
+
+  doc.moveDown();
+
+  doc.fontSize(12);
+
+  doc.text(`Base Salary: ${payroll.baseSalary}`);
+
+  doc.text(
+    `Transport Allowance: ${payroll.allowances?.transport || 0}`
+  );
+
+  doc.text(
+    `Housing Allowance: ${payroll.allowances?.housing || 0}`
+  );
+
+  doc.text(
+    `Medical Allowance: ${payroll.allowances?.medical || 0}`
+  );
+
+  doc.moveDown();
+
+  doc.text(
+    `Absence Deduction: ${payroll.deductions?.absence || 0}`
+  );
+
+  doc.text(
+    `Late Deduction: ${payroll.deductions?.late || 0}`
+  );
+
+  doc.moveDown();
+
+  doc
+    .fontSize(16)
+    .text(`Net Salary: ${payroll.netSalary}`);
+
+  doc.moveDown();
+
+  doc
+    .fontSize(12)
+    .text(`Status: ${payroll.status}`);
+
+  if (payroll.paidAt) {
+    doc.text(`Paid At: ${payroll.paidAt.toDateString()}`);
+  }
+
+  doc.end();
 });
