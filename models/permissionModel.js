@@ -3,7 +3,7 @@ const permissionSchema = new mongoose.Schema(
   {
     employeeID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User ",
+      ref: "User",
       required: true,
     },
     type: {

@@ -7,10 +7,14 @@ import Department from "../models/departmentModel.js";
 import Task from "../models/taskModel.js";
 import Attendance from "../models/attendanceModel.js";
 import Notification from "../models/notificationModel.js";
+import Permission from "../models/permissionModel.js";
+import Payroll from "../models/payrollModel.js";
 
 dotenv.config({ path: "./config.env" });
 
 const DB = process.env.LOCAL_DATABASE;
+
+const PASSWORD = "Test@1234";
 
 // ========================================
 // Connect Database
@@ -35,6 +39,8 @@ const clearDatabase = async () => {
   console.log("🗑️ Clearing old data...");
 
   await Notification.deleteMany({});
+  await Permission.deleteMany({});
+  await Payroll.deleteMany({});
   await Attendance.deleteMany({});
   await Task.deleteMany({});
   await Employee.deleteMany({});
@@ -51,245 +57,245 @@ const clearDatabase = async () => {
 const createUsers = async () => {
   console.log("👤 Creating users...");
 
-  // =========================
+  // ========================================
   // Admin
-  // =========================
+  // ========================================
 
   const admin = await User.create({
     firstName: "Ahmed",
     lastName: "Admin",
     email: "admin@hrsystem.com",
-    password: "12345678",
+    password: PASSWORD,
     role: "admin",
   });
 
-  // =========================
+  // ========================================
   // HR
-  // =========================
+  // ========================================
 
   const hrUsers = await User.create([
     {
       firstName: "Mona",
       lastName: "Hassan",
       email: "mona.hr@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "hr",
     },
     {
       firstName: "Omar",
       lastName: "Khaled",
       email: "omar.hr@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "hr",
     },
   ]);
 
-  // =========================
+  // ========================================
   // Managers
-  // =========================
+  // ========================================
 
   const managerUsers = await User.create([
     {
       firstName: "Mohamed",
       lastName: "Ali",
       email: "mohamed.manager@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "manager",
     },
     {
       firstName: "Sara",
       lastName: "Mahmoud",
       email: "sara.manager@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "manager",
     },
     {
       firstName: "Youssef",
       lastName: "Ahmed",
       email: "youssef.manager@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "manager",
     },
     {
       firstName: "Nour",
       lastName: "Ibrahim",
       email: "nour.manager@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "manager",
     },
   ]);
 
-  // =========================
+  // ========================================
   // Security
-  // =========================
+  // ========================================
 
   const securityUsers = await User.create([
     {
       firstName: "Hany",
       lastName: "Security",
       email: "hany.security@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "security",
     },
     {
       firstName: "Tamer",
       lastName: "Security",
       email: "tamer.security@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "security",
     },
     {
       firstName: "Mostafa",
       lastName: "Security",
       email: "mostafa.security@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "security",
     },
   ]);
 
-  // =========================
+  // ========================================
   // Employees
-  // =========================
+  // ========================================
 
   const employeeUsers = await User.create([
     {
       firstName: "Ali",
       lastName: "Hassan",
       email: "ali.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Omar",
       lastName: "Mohamed",
       email: "omar.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Mostafa",
       lastName: "Ahmed",
       email: "mostafa.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Mahmoud",
       lastName: "Samir",
       email: "mahmoud.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Karim",
       lastName: "Hassan",
       email: "karim.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Amr",
       lastName: "Khaled",
       email: "amr.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Yassin",
       lastName: "Ali",
       email: "yassin.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Hassan",
       lastName: "Ibrahim",
       email: "hassan.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Khaled",
       lastName: "Mahmoud",
       email: "khaled.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Eslam",
       lastName: "Ahmed",
       email: "eslam.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Adham",
       lastName: "Mohamed",
       email: "adham.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Ayman",
       lastName: "Hassan",
       email: "ayman.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Maher",
       lastName: "Ali",
       email: "maher.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Seif",
       lastName: "Khaled",
       email: "seif.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Ziad",
       lastName: "Ahmed",
       email: "ziad.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Fady",
       lastName: "Mahmoud",
       email: "fady.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Bassem",
       lastName: "Ibrahim",
       email: "bassem.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Tarek",
       lastName: "Samir",
       email: "tarek.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Walid",
       lastName: "Hassan",
       email: "walid.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
     {
       firstName: "Ramy",
       lastName: "Mohamed",
       email: "ramy.employee@hrsystem.com",
-      password: "12345678",
+      password: PASSWORD,
       role: "employee",
     },
   ]);
@@ -340,19 +346,68 @@ const createDepartments = async (managerUsers) => {
 // Create Employees
 // ========================================
 
-const createEmployees = async (employeeUsers, departments) => {
-  console.log("👨‍💻 Creating employees...");
+const createEmployees = async (
+  admin,
+  hrUsers,
+  managerUsers,
+  securityUsers,
+  employeeUsers,
+  departments,
+) => {
+  console.log("👨‍💻 Creating employee records...");
 
-  const employeesData = employeeUsers.map((user, index) => {
-    const department = departments[index % departments.length];
+  // IMPORTANT:
+  // Admin, HR, Managers and Security are also
+  // represented in the Employee collection.
 
-    return {
-      user: user._id,
+  const employeeRecords = [
+    // ========================================
+    // Admin
+    // ========================================
 
-      nationalId: `29${String(index + 1).padStart(12, "0")}`,
+    {
+      user: admin,
+      department: departments[0],
+      jobTitle: "System Administrator",
+    },
 
-      department: department._id,
+    // ========================================
+    // HR
+    // ========================================
 
+    ...hrUsers.map((user) => ({
+      user,
+      department: departments[1],
+      jobTitle: "HR Specialist",
+    })),
+
+    // ========================================
+    // Managers
+    // ========================================
+
+    ...managerUsers.map((user, index) => ({
+      user,
+      department: departments[index % departments.length],
+      jobTitle: "Department Manager",
+    })),
+
+    // ========================================
+    // Security
+    // ========================================
+
+    ...securityUsers.map((user) => ({
+      user,
+      department: departments[0],
+      jobTitle: "Security Officer",
+    })),
+
+    // ========================================
+    // Normal Employees
+    // ========================================
+
+    ...employeeUsers.map((user, index) => ({
+      user,
+      department: departments[index % departments.length],
       jobTitle:
         index % 4 === 0
           ? "Backend Developer"
@@ -361,6 +416,18 @@ const createEmployees = async (employeeUsers, departments) => {
             : index % 4 === 2
               ? "Software Engineer"
               : "System Administrator",
+    })),
+  ];
+
+  const employeesData = employeeRecords.map(
+    ({ user, department, jobTitle }, index) => ({
+      user: user._id,
+
+      nationalId: `29${String(index + 1).padStart(12, "0")}`,
+
+      department: department._id,
+
+      jobTitle,
 
       contractType:
         index % 3 === 0
@@ -384,7 +451,7 @@ const createEmployees = async (employeeUsers, departments) => {
       bankDetails: {
         bankName: "Banque Misr",
         accountNumber: `1234567890${String(index).padStart(2, "0")}`,
-        iban: `EG380019000500000000263180${String(index).padStart(2, "4")}`,
+        iban: `EG380019000500000000263180${String(index).padStart(4, "0")}`,
       },
 
       emergencyContact: {
@@ -394,12 +461,12 @@ const createEmployees = async (employeeUsers, departments) => {
       },
 
       status: "active",
-    };
-  });
+    }),
+  );
 
   const employees = await Employee.create(employeesData);
 
-  console.log(`✅ ${employees.length} employees created`);
+  console.log(`✅ ${employees.length} employee records created`);
 
   return employees;
 };
@@ -436,14 +503,12 @@ const createTasks = async (employeeUsers, managerUsers, departments) => {
     "Create Manager Dashboard",
   ];
 
+  const statusArray = ["pending", "in progress", "completed"];
+
   for (let i = 0; i < 50; i++) {
     const employee = employeeUsers[i % employeeUsers.length];
-
     const manager = managerUsers[i % managerUsers.length];
-
     const department = departments[i % departments.length];
-
-    const statusArray = ["pending", "in progress", "completed"];
 
     tasksData.push({
       title: `${taskTitles[i % taskTitles.length]} #${i + 1}`,
@@ -464,9 +529,7 @@ const createTasks = async (employeeUsers, managerUsers, departments) => {
       comments: [
         {
           authorId: manager._id,
-
           text: "Please start working on this task.",
-
           createdAt: new Date(),
         },
       ],
@@ -537,10 +600,133 @@ const createAttendance = async (employeeUsers, securityUsers) => {
 };
 
 // ========================================
+// Create Permissions
+// ========================================
+
+const createPermissions = async (employeeUsers) => {
+  console.log("📝 Creating permission requests...");
+
+  const permissionsData = [];
+
+  const types = ["annual", "sick", "emergency", "unpaid"];
+
+  const statuses = ["pending", "manager_approved", "hr_approved", "rejected"];
+
+  for (let i = 0; i < 20; i++) {
+    const employee = employeeUsers[i % employeeUsers.length];
+
+    const startDate = new Date(2026, 8, (i % 20) + 1);
+
+    const endDate = new Date(2026, 8, (i % 20) + 2);
+
+    permissionsData.push({
+      employeeID: employee._id,
+
+      type: types[i % types.length],
+
+      reason:
+        i % 4 === 0
+          ? "Annual vacation"
+          : i % 4 === 1
+            ? "Medical appointment"
+            : i % 4 === 2
+              ? "Family emergency"
+              : "Personal leave",
+
+      attachment:
+        i % 3 === 0
+          ? "https://example.com/attachments/document.pdf"
+          : undefined,
+
+      startDate,
+
+      endDate,
+
+      status: statuses[i % statuses.length],
+    });
+  }
+
+  const permissions = await Permission.create(permissionsData);
+
+  console.log(`✅ ${permissions.length} permissions created`);
+
+  return permissions;
+};
+
+// ========================================
+// Create Payroll
+// ========================================
+
+const createPayroll = async (employees) => {
+  console.log("💰 Creating payroll records...");
+
+  const payrollData = [];
+
+  for (const employee of employees) {
+    const baseSalary = employee.baseSalary || 8000;
+
+    const transport = employee.allowances?.transport || 0;
+
+    const housing = employee.allowances?.housing || 0;
+
+    const medical = employee.allowances?.medical || 0;
+
+    // Generate different deductions
+    const absence = Math.floor(Math.random() * 500);
+
+    const late = Math.floor(Math.random() * 300);
+
+    const totalAllowances = transport + housing + medical;
+
+    const totalDeductions = absence + late;
+
+    const netSalary = baseSalary + totalAllowances - totalDeductions;
+
+    payrollData.push({
+      employee: employee.user,
+
+      month: 8,
+
+      year: 2026,
+
+      baseSalary,
+
+      allowances: {
+        transport,
+        housing,
+        medical,
+      },
+
+      deductions: {
+        absence,
+        late,
+      },
+
+      netSalary,
+
+      status:
+        employee._id.toString().slice(-1) % 3 === 0
+          ? "paid"
+          : employee._id.toString().slice(-1) % 3 === 1
+            ? "processed"
+            : "draft",
+
+      paidAt: Math.random() > 0.5 ? new Date(2026, 7, 30) : undefined,
+    });
+  }
+
+  const payroll = await Payroll.create(payrollData);
+
+  console.log(`✅ ${payroll.length} payroll records created`);
+
+  return payroll;
+};
+
+// ========================================
 // Create Notifications
 // ========================================
 
-const createNotifications = async (employeeUsers, tasks) => {
+const createNotifications = async (tasks) => {
   console.log("🔔 Creating notifications...");
 
   const notificationsData = [];
@@ -576,11 +762,34 @@ const seed = async () => {
 
     await clearDatabase();
 
+    // ========================================
+    // Users
+    // ========================================
+
     const users = await createUsers();
+
+    // ========================================
+    // Departments
+    // ========================================
 
     const departments = await createDepartments(users.managerUsers);
 
-    const employees = await createEmployees(users.employeeUsers, departments);
+    // ========================================
+    // Employee Collection
+    // ========================================
+
+    const employees = await createEmployees(
+      users.admin,
+      users.hrUsers,
+      users.managerUsers,
+      users.securityUsers,
+      users.employeeUsers,
+      departments,
+    );
+
+    // ========================================
+    // Tasks
+    // ========================================
 
     const tasks = await createTasks(
       users.employeeUsers,
@@ -588,23 +797,58 @@ const seed = async () => {
       departments,
     );
 
+    // ========================================
+    // Attendance
+    // ========================================
+
     const attendance = await createAttendance(
       users.employeeUsers,
       users.securityUsers,
     );
 
-    const notifications = await createNotifications(users.employeeUsers, tasks);
+    // ========================================
+    // Permissions
+    // ========================================
+
+    const permissions = await createPermissions(users.employeeUsers);
+
+    // ========================================
+    // Payroll
+    // ========================================
+
+    const payroll = await createPayroll(employees);
+
+    // ========================================
+    // Notifications
+    // ========================================
+
+    const notifications = await createNotifications(tasks);
+
+    // ========================================
+    // Summary
+    // ========================================
 
     console.log("\n================================");
     console.log("🌱 SEED COMPLETED SUCCESSFULLY");
     console.log("================================");
 
     console.log(`Users: ${await User.countDocuments()}`);
+
     console.log(`Departments: ${await Department.countDocuments()}`);
+
     console.log(`Employees: ${await Employee.countDocuments()}`);
+
     console.log(`Tasks: ${await Task.countDocuments()}`);
+
     console.log(`Attendance: ${await Attendance.countDocuments()}`);
+
+    console.log(`Permissions: ${await Permission.countDocuments()}`);
+
+    console.log(`Payroll: ${await Payroll.countDocuments()}`);
+
     console.log(`Notifications: ${await Notification.countDocuments()}`);
+
+    console.log("\n🔐 All users password: Test@1234");
 
     await mongoose.connection.close();
 
