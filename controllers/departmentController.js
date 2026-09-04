@@ -1,8 +1,10 @@
 import Department from "../models/departmentModel.js";
+import User from "../models/userModel.js";
 import AppError from "../utils/appError.js";
 import catchAsync from "../utils/catchAsync.js";
 export const createDepartment = catchAsync(async (req, res, next) => {
   const department = await Department.create(req.body);
+
   res.status(200).json({
     status: "success",
     message: "department created successfuly",

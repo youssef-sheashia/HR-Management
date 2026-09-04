@@ -111,7 +111,7 @@ export const refreshAccessToken = catchAsync(async (req, res, next) => {
       expiresIn: process.env.JWT__ACCESS_TOKEN_EXPIRES_IN,
     },
   );
-  res.cookie("accessToken", accessToken, accessCookieOptions).status(201).json({
+  res.cookie("accessToken", accessToken, accessCookieOptions).status(200).json({
     status: "success",
   });
 });

@@ -24,7 +24,7 @@ const employeeSchema = new mongoose.Schema(
 
     jobTitle: {
       type: String,
-      required: true,
+      required: [true, "Please provide a job title"],
       trim: true,
     },
 
