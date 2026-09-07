@@ -10,6 +10,7 @@ import notificationRoute from "./routes/notificationsRoute.js";
 
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import cors from "cors";
 import ExpressMongoSanitize from "express-mongo-sanitize";
 import { xss } from "express-xss-sanitizer";
 
