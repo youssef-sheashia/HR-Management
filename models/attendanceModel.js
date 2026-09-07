@@ -13,7 +13,7 @@ const attendanceSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["present", "absent", "late"],
+      enum: ["present", "absent", "on_leave", "late"],
       required: true,
     },
     checkIn: Date,
@@ -21,7 +21,6 @@ const attendanceSchema = new mongoose.Schema(
     markedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
   },
   { timestamps: true },

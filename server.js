@@ -21,12 +21,13 @@ async function startServer() {
   ///////////////////////////!!!!!!!!!!!!!!!!!!!!!!///////////////////////////
   const { default: app } = await import("./app.js");
   ////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!///////////////////////////
+  await import("./jobs/markabsent.js");
+
   const port = process.env.PORT || 3000;
   const httpServer = http.createServer(app);
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL,
-      credentials: true,
+      origin: "*",
     },
   });
   io.use((socket, next) => {
@@ -49,8 +50,8 @@ async function startServer() {
   });
 
   io.on("connection", (socket) => {
-    socket.join(socket.userId);
-    console.log(`user ${socket.userId} connected via socket`);
+    socket.join(socket.user.id);
+    console.log(`user ${socket.user.id} connected via socket`);
   });
   app.set("io", io);
   const server = httpServer.listen(port, () => {
