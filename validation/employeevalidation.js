@@ -20,7 +20,7 @@ export const createEmployeeSchema = z.object({
       "National ID must be exactly 14 digits and cannot start with 0",
     ),
   department: z.string({ error: "department is requierd" }),
-  jobtitle: z.string().optional(),
+  jobTitle: z.string().optional(),
   contractType: z.string().optional(),
   hireDate: z.coerce.date(),
   salaryGrade: z.string(),

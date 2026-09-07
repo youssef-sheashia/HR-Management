@@ -4,8 +4,20 @@ import catchAsync from "../utils/catchAsync.js";
 import mongoose from "mongoose";
 import AppError from "../utils/appError.js";
 import AggregateFeatures from "../utils/aggregateFeatures.js";
+import Department from "../models/departmentModel.js";
+
 export const createEmployee = catchAsync(async (req, res, next) => {
-  const { firstName, lastName, email, password, role, ...others } = req.body;
+  const { department } = req.body;
+  const departmentexists = await Department.findById(department);
+  if (!departmentexists) {
+    return next(new AppError("Department not found", 404));
+  }
+  const { firstName, lastName, email, role, password, ...others } = req.body;
+  if (req.user.role === "hr" && role === "admin") {
+    return next(
+      new AppError("You are not authorized to create an admin employee", 403),
+    );
+  }
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
@@ -15,8 +27,8 @@ export const createEmployee = catchAsync(async (req, res, next) => {
           firstName,
           lastName,
           email,
-          password,
           role,
+          password,
         },
       ],
       { session },
@@ -91,19 +103,6 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
         "user.active": true,
       },
     },
-
-    {
-      $lookup: {
-        from: "departments",
-        localField: "department",
-        foreignField: "_id",
-        as: "department",
-      },
-    },
-
-    {
-      $unwind: "$department",
-    },
   ];
 
   if (req.user.role === "manager") {
@@ -114,11 +113,16 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
     });
   }
 
-  const features = new AggregateFeatures(pipeline, req.query);
-
-  features
-    .filter(["status", "contractType", "salaryGrade", "baseSalary"])
-    .search(["user.firstName", "user.lastName", "nationalId", "jobTitle"])
+  const features = new AggregateFeatures(pipeline, req.query)
+    .filter({
+      status: "status",
+      contractType: "contractType",
+      salaryGrade: "salaryGrade",
+      department: "department.name",
+      firstName: "user.firstName",
+      lastName: "user.lastName",
+      jobTitle: "jobTitle",
+    })
     .sort()
     .paginate();
 
@@ -134,6 +138,11 @@ export const getAllEmployees = catchAsync(async (req, res, next) => {
   });
 
   const employees = await Employee.aggregate(features.pipeline);
+  res.status(200).json({
+    status: "success",
+    results: employees.length,
+    data: { employees },
+  });
 });
 export const updateEmployee = catchAsync(async (req, res, next) => {
   const { firstName, lastName, profileImg, role, ...employeeData } = req.body;
@@ -145,6 +154,11 @@ export const updateEmployee = catchAsync(async (req, res, next) => {
   if (profileImg) updateUser.profileImg = profileImg;
   if (role) updateUser.role = role;
 
+  if (req.user.role === "hr" && role === "admin") {
+    return next(
+      new AppError("You are not authorized to create an admin employee", 403),
+    );
+  }
   const session = await mongoose.startSession();
 
   try {
@@ -176,7 +190,7 @@ export const updateEmployee = catchAsync(async (req, res, next) => {
   }
 });
 export const deleteEmployee = catchAsync(async (req, res, next) => {
-  const session = mongoose.startSession();
+  const session = await mongoose.startSession();
   try {
     await session.startTransaction();
     const user = await User.findByIdAndUpdate(

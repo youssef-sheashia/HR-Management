@@ -31,7 +31,7 @@ export const createTask = catchAsync(async (req, res, next) => {
       [
         {
           assignedBy: req.user.id,
-          assignedTo: employee.id,
+          assignedTo: employee.user,
           department: department.id,
           title,
           description,
@@ -71,7 +71,6 @@ export const createTask = catchAsync(async (req, res, next) => {
   } catch (err) {
     console.error("socket emit failed:", err);
   }
-  it("notification", notification);
 
   res.status(201).json({
     status: "success",
@@ -142,14 +141,19 @@ export const getAllTasks = catchAsync(async (req, res, next) => {
   const features = new AggregateFeatures(pipline, req.query);
 
   features
-    .filter(["status", "department.name"])
-    .search(["employee.firstName", "employee.lastName", "title"])
+    .filter({
+      status: "status",
+      department: "department.name",
+      firstName: "employee.firstName",
+      lastName: "employee.lastName",
+      title: "title",
+    })
     .sort()
-    .limitFields()
     .paginate();
   const tasks = await Task.aggregate(features.pipeline);
   res.status(200).json({
     status: "success",
+    length: tasks.length,
     data: {
       tasks,
     },

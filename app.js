@@ -13,6 +13,9 @@ import helmet from "helmet";
 import ExpressMongoSanitize from "express-mongo-sanitize";
 import { xss } from "express-xss-sanitizer";
 
+import attendanceRoute from "./routes/attendanceRoute.js";
+import permissionRoute from "./routes/permissionRoute.js";
+import payrollRoute from "./routes/payrollRoute.js";
 const app = express();
 app.use(helmet());
 app.use(cors());
@@ -31,9 +34,12 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/employees", employeeRoute);
-app.use("/api/v1/department", departmentRoute);
+app.use("/api/v1/departments", departmentRoute);
 app.use("/api/v1/tasks", taskRoute);
 app.use("/api/v1/notifications", notificationRoute);
+app.use("/api/v1/attendances", attendanceRoute);
+app.use("/api/v1/permissions", permissionRoute);
+app.use("/api/v1/payrolls", payrollRoute);
 app.use((req, res, next) => {
   next(new AppError("this url not found", 404));
 });

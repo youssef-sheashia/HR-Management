@@ -4,16 +4,20 @@ class AggregateFeatures {
     this.queryString = queryString;
   }
 
-  filter() {
-    const queryObj = { ...this.queryString };
+  filter(fields = {}) {
+    const match = {};
 
-    const excludedFields = ["page", "sort", "limit", "fields", "search"];
+    Object.entries(fields).forEach(([queryField, dbField]) => {
+      const value = this.queryString[queryField];
 
-    excludedFields.forEach((field) => delete queryObj[field]);
+      if (value !== undefined) {
+        match[dbField] = value;
+      }
+    });
 
-    if (Object.keys(queryObj).length > 0) {
+    if (Object.keys(match).length > 0) {
       this.pipeline.push({
-        $match: queryObj,
+        $match: match,
       });
     }
 

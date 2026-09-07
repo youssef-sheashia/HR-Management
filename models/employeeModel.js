@@ -24,7 +24,7 @@ const employeeSchema = new mongoose.Schema(
 
     jobTitle: {
       type: String,
-      required: true,
+      required: [true, "Please provide a job title"],
       trim: true,
     },
 
@@ -82,7 +82,7 @@ const employeeSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["active", "on_leave", "suspended", "terminated"],
+      enum: ["active", "suspended", "terminated"],
       default: "active",
     },
   },

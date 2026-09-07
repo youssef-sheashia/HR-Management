@@ -6,8 +6,17 @@ function castError(err) {
 }
 
 function duplicateError(err) {
-  const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
-  return new AppError(`duplicated field of ${value}`, 400);
+  const duplicate =
+    err.keyValue || err.cause?.keyValue || err.cause?.errorResponse?.keyValue;
+
+  if (!duplicate) {
+    return new AppError("Duplicate field value", 400);
+  }
+
+  const field = Object.keys(duplicate)[0];
+  const value = duplicate[field];
+
+  return new AppError(`${field} "${value}" already exists`, 400);
 }
 function ValidationError(err) {
   const error = Object.values(err.errors)
@@ -46,7 +55,13 @@ function globalError(err, req, res, next) {
   } else {
     // production or other fallback environments
     if (err.name === "CastError") err = castError(err);
-    if (err.code === 11000) err = duplicateError(err);
+    if (
+      err.code === 11000 ||
+      err.cause?.code === 11000 ||
+      err.cause?.errorResponse?.code === 11000
+    ) {
+      err = duplicateError(err);
+    }
     if (err.name === "ValidationError") err = ValidationError(err);
     if (err.name === "JsonWebTokenError")
       err = new AppError("Invalid token. Please log in again.", 401);
