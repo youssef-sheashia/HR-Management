@@ -4,6 +4,7 @@ import APIFeatures from "../utils/apiFeatures.js";
 import Permission from "../models/permissionModel.js";
 import Employee from "../models/employeeModel.js";
 import AggregateFeatures from "../utils/aggregateFeatures.js";
+import mongoose from "mongoose";
 
 export const createPermission = catchAsync(async (req, res, next) => {
   const { type, reason, attachment, startDate, endDate } = req.body;
@@ -136,6 +137,7 @@ export const getAllPermissions = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
+    length: permissions.length,
     data: {
       permissions,
     },
@@ -161,75 +163,92 @@ export const getMYPermissions = catchAsync(async (req, res, next) => {
   });
 });
 export const getpermissionsByManager = catchAsync(async (req, res, next) => {
-  const features = new AggregateFeatures(
-    Permission.aggregate([
-      {
-        $match: {
-          status: "pending",
-        },
+  const pipeline = [
+    {
+      $match: {
+        status: "pending",
       },
-      {
-        $lookup: {
-          from: "employees",
-          localField: "employeeID",
-          foreignField: "user",
-          as: "employee",
-        },
-      },
-      { $unwind: "$employee" },
+    },
 
-      {
-        $lookup: {
-          from: "departments",
-          localField: "employee.department",
-          foreignField: "_id",
-          as: "department",
-        },
+    {
+      $lookup: {
+        from: "employees",
+        localField: "employeeID",
+        foreignField: "user",
+        as: "employee",
       },
-      {
-        $unwind: "$department",
+    },
+
+    {
+      $unwind: "$employee",
+    },
+
+    {
+      $lookup: {
+        from: "departments",
+        localField: "employee.department",
+        foreignField: "_id",
+        as: "department",
       },
-      {
-        $match: {
-          "department.manager": req.user.id,
-        },
+    },
+
+    {
+      $unwind: "$department",
+    },
+
+    {
+      $match: {
+        "department.manager": new mongoose.Types.ObjectId(req.user.id),
       },
-      {
-        $lookup: {
-          from: "users",
-          localField: "employeeID",
-          foreignField: "_id",
-          as: "user",
-        },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "employeeID",
+        foreignField: "_id",
+        as: "user",
       },
-      {
-        $unwind: "$user",
+    },
+
+    {
+      $unwind: "$user",
+    },
+
+    {
+      $project: {
+        _id: 1,
+        employeeID: 1,
+        type: 1,
+        reason: 1,
+        attachment: 1,
+        startDate: 1,
+        endDate: 1,
+        status: 1,
+        "user.firstName": 1,
+        "user.lastName": 1,
+        "user.email": 1,
+        "department.name": 1,
+        createdAt: 1,
       },
-      {
-        $project: {
-          _id: 1,
-          employeeID: 1,
-          type: 1,
-          reason: 1,
-          attachment: 1,
-          startDate: 1,
-          endDate: 1,
-          status: 1,
-          "user.firstName": 1,
-          "user.lastName": 1,
-          "user.email": 1,
-          "department.name": 1,
-        },
-      },
-    ]),
-    req.query,
-  )
-    .filter()
+    },
+  ];
+
+  const features = new AggregateFeatures(pipeline, req.query)
+    .filter({
+      employeeID: "employeeID",
+      type: "type",
+      firstName: "user.firstName",
+      lastName: "user.lastName",
+      departmentName: "department.name",
+    })
     .sort()
     .paginate();
-  const permissions = await features.query;
+
+  const permissions = await Permission.aggregate(features.pipeline);
+
   res.status(200).json({
     status: "success",
+    length: permissions.length,
     data: {
       permissions,
     },
@@ -237,6 +256,9 @@ export const getpermissionsByManager = catchAsync(async (req, res, next) => {
 });
 export const permissionActionByManager = catchAsync(async (req, res, next) => {
   const { id } = req.params;
+  if (!req.body?.action) {
+    return next(new AppError("Action is required", 400));
+  }
   if (
     req.body.action !== "manager_approved" &&
     req.body.action !== "rejected"
@@ -256,12 +278,11 @@ export const permissionActionByManager = catchAsync(async (req, res, next) => {
   const employee = await Employee.findOne({
     user: permission.employeeID,
   }).populate("department");
-
   if (!employee) {
     return next(new AppError("Employee not found", 404));
   }
 
-  if (employee.department.manager.toString() !== req.user.id) {
+  if (employee.department.manager.id !== req.user.id) {
     return next(new AppError("You are not the manager of this employee", 403));
   }
   if (permission.status !== "pending") {
@@ -278,6 +299,9 @@ export const permissionActionByManager = catchAsync(async (req, res, next) => {
 });
 export const permissionActionByHR = catchAsync(async (req, res, next) => {
   const { id } = req.params;
+  if (!req.body?.action) {
+    return next(new AppError("Action is required", 400));
+  }
   if (req.body.action !== "hr_approved" && req.body.action !== "rejected") {
     return next(
       new AppError(
@@ -306,13 +330,13 @@ export const deletePermission = catchAsync(async (req, res, next) => {
   const { id } = req.params;
   const permission = await Permission.findOneAndDelete({
     _id: id,
-    employeeID: rq.user.id,
+    employeeID: req.user.id,
     status: "pending",
   });
   if (!permission) {
     return next(new AppError("Permission not found", 404));
   }
-  res.status(200).json({
+  res.status(204).json({
     status: "success",
     data: {
       permission,
