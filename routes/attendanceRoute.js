@@ -2,7 +2,7 @@ import express from "express";
 import {
   getAllAttendance,
   markAttendance,
-  updateAttendance,
+  markCheckout,
   getMyAttendance,
   getEmployeesForAttendance,
 } from "../controllers/attendanceController.js";
@@ -22,7 +22,7 @@ const router = express.Router();
 router.use(protect);
 router.get(
   "/",
-  restrictTo("admin", "hr"),
+  restrictTo("admin", "hr", "security"),
   validateQuery(attendanceQuerySchema),
   getAllAttendance,
 );
@@ -33,13 +33,7 @@ router.post(
   validate(attendanceSchema),
   markAttendance,
 );
-router.patch(
-  "/:id",
-  restrictTo("security"),
-  validateIdParams,
-  validate(updateAttendanceSchema),
-  updateAttendance,
-);
+router.patch("/:id", restrictTo("security"), validateIdParams, markCheckout);
 router.get(
   "/my-attendance",
   validateQuery(attendanceQuerySchema),

@@ -122,27 +122,37 @@ export const getAllAttendance = catchAsync(async (req, res, next) => {
     },
   });
 });
-export const updateAttendance = catchAsync(async (req, res, next) => {
+export const markCheckout = catchAsync(async (req, res, next) => {
   const attendanceID = req.params.id;
+
   const attendance = await Attendance.findById(attendanceID);
   if (!attendance) return next(new AppError("attendance not found", 404));
-  if (attendance.date.toDateString() !== new Date().toDateString())
+
+  if (attendance.date.toDateString() !== new Date().toDateString()) {
     return next(new AppError("You can only update attendance for today", 400));
-  const { checkIn, checkOut } = req.body;
-  const parsedCheckIn = checkIn ? new Date(checkIn) : attendance.checkIn;
-  const parsedCheckOut = checkOut ? new Date(checkOut) : attendance.checkOut;
-  const limitTime = new Date(parsedCheckIn);
-  limitTime.setHours(9, 15, 0, 0);
-  const status = parsedCheckIn > limitTime ? "late" : "present";
-  attendance.checkIn = parsedCheckIn;
-  attendance.checkOut = parsedCheckOut;
-  attendance.status = status;
+  }
+
+  if (attendance.status === "absent" || attendance.status === "on_leave") {
+    return next(
+      new AppError(
+        "cannot check out an employee marked absent or on leave",
+        400,
+      ),
+    );
+  }
+
+  if (attendance.checkOut) {
+    return next(
+      new AppError("checkout already recorded for this employee", 400),
+    );
+  }
+
+  attendance.checkOut = new Date();
   await attendance.save();
+
   res.status(200).json({
     status: "success",
-    data: {
-      attendance,
-    },
+    data: { attendance },
   });
 });
 export const getMyAttendance = catchAsync(async (req, res, next) => {

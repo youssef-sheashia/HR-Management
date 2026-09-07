@@ -34,9 +34,14 @@ router.get(
 );
 router.get("/my", getMyPayslip);
 
-router.use(restrictTo("hr", "admin"), validateIdParams);
+router.use(restrictTo("hr", "admin"));
 
-router.get("/:id", getPayrollById);
-router.patch("/:id", validate(updatePayrollSchema), updatePayroll);
-router.patch("/:id/mark-paid", markPayrollAsPaid);
+router.get("/:id", validateIdParams, getPayrollById);
+router.patch(
+  "/:id",
+  validateIdParams,
+  validate(updatePayrollSchema),
+  updatePayroll,
+);
+router.patch("/:id/mark-paid", validateIdParams, markPayrollAsPaid);
 export default router;

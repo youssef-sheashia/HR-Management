@@ -7,52 +7,39 @@ import aggregateFeaturs from "../utils/aggregateFeatures.js";
 import APIFeatures from "../utils/apiFeatures.js";
 import Employee from "../models/employeeModel.js";
 import Notification from "../models/notificationModel.js";
+import Attendance from "../models/attendanceModel.js";
 
 export const createPayrollForAllEmployees = catchAsync(
   async (req, res, next) => {
     const { month, year } = req.body;
 
-    const existingPayroll = await Payroll.findOne({
-      month,
-      year,
-    });
-
+    const existingPayroll = await Payroll.findOne({ month, year });
     if (existingPayroll) {
       return next(
         new AppError("Payroll for this month and year already exists", 400),
       );
     }
 
-    const employees = await Employee.find({
-      status: "active",
-    });
+    const employees = await Employee.find({ status: "active" });
 
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 1);
 
     for (const emp of employees) {
       const absentDays = await Attendance.countDocuments({
-        employee: emp._id,
+        employee: emp.user,
         status: "absent",
-        date: {
-          $gte: startDate,
-          $lt: endDate,
-        },
+        date: { $gte: startDate, $lt: endDate },
       });
 
       const lateDays = await Attendance.countDocuments({
-        employee: emp._id,
+        employee: emp.user,
         status: "late",
-        date: {
-          $gte: startDate,
-          $lt: endDate,
-        },
+        date: { $gte: startDate, $lt: endDate },
       });
 
       const absenceDeduction = (absentDays * emp.baseSalary) / 30;
-
       const lateDeduction = ((lateDays * emp.baseSalary) / 30) * 0.5;
-
       const totalDeductions = absenceDeduction + lateDeduction;
 
       const allowances = {
@@ -67,21 +54,16 @@ export const createPayrollForAllEmployees = catchAsync(
       const netSalary = emp.baseSalary + totalAllowances - totalDeductions;
 
       await Payroll.create({
-        employee: emp._id,
+        employee: emp.user,
         month,
         year,
         baseSalary: emp.baseSalary,
-
         allowances,
-
         deductions: {
           absence: absenceDeduction,
           late: lateDeduction,
-          total: totalDeductions,
         },
-
         netSalary,
-
         status: "draft",
       });
     }
@@ -110,49 +92,47 @@ export const getMyPayslip = catchAsync(async (req, res, next) => {
   });
 });
 export const getAllPayRecords = catchAsync(async (req, res, next) => {
-  const features = new aggregateFeaturs(
-    payrolls.aggregate([
-      {
-        $lookup: {
-          from: "employees",
-          localField: "employeeId",
-          foreignField: "user",
-          as: "employee",
-        },
+  const pipline = [
+    {
+      $lookup: {
+        from: "employees",
+        localField: "employee",
+        foreignField: "user",
+        as: "employee",
       },
+    },
 
-      {
-        $unwind: "$employee",
-      },
+    {
+      $unwind: "$employee",
+    },
 
-      {
-        $lookup: {
-          from: "users",
-          localField: "employee.user",
-          foreignField: "_id",
-          as: "user",
-        },
+    {
+      $lookup: {
+        from: "users",
+        localField: "employee.user",
+        foreignField: "_id",
+        as: "user",
       },
+    },
 
-      {
-        $unwind: "$user",
-      },
+    {
+      $unwind: "$user",
+    },
 
-      {
-        $lookup: {
-          from: "departments",
-          localField: "employee.department",
-          foreignField: "_id",
-          as: "department",
-        },
+    {
+      $lookup: {
+        from: "departments",
+        localField: "employee.department",
+        foreignField: "_id",
+        as: "department",
       },
+    },
 
-      {
-        $unwind: "$department",
-      },
-    ]),
-    req.query,
-  )
+    {
+      $unwind: "$department",
+    },
+  ];
+  const features = new aggregateFeaturs(pipline, req.query)
     .filter({
       month: "month",
       year: "year",
@@ -161,10 +141,11 @@ export const getAllPayRecords = catchAsync(async (req, res, next) => {
     .sort()
     .paginate();
 
-  const payrollRecords = await features.query;
+  const payrollRecords = await Payroll.aggregate(features.pipeline);
 
   res.status(200).json({
     status: "success",
+    length: payrollRecords.length,
     data: {
       payrolls: payrollRecords,
     },
@@ -174,16 +155,7 @@ export const getAllPayRecords = catchAsync(async (req, res, next) => {
 export const downloadPayslip = catchAsync(async (req, res, next) => {
   const payroll = await Payroll.findById(req.params.id).populate({
     path: "employee",
-    populate: [
-      {
-        path: "user",
-        select: "firstName lastName email",
-      },
-      {
-        path: "department",
-        select: "name",
-      },
-    ],
+    select: "firstName lastName email",
   });
 
   if (!payroll) {
@@ -192,17 +164,21 @@ export const downloadPayslip = catchAsync(async (req, res, next) => {
 
   if (
     req.user.role === "employee" &&
-    payroll.employee.user._id.toString() !== req.user._id.toString()
+    payroll.employee._id.toString() !== req.user.id.toString()
   ) {
     return next(
       new AppError("You are not allowed to access this payslip", 403),
     );
   }
 
+  // department isn't reachable from a User, so look it up via Employee
+  const employeeProfile = await Employee.findOne({
+    user: payroll.employee._id,
+  }).populate({ path: "department", select: "name" });
+
   const doc = new PDFDocument();
 
   res.setHeader("Content-Type", "application/pdf");
-
   res.setHeader(
     "Content-Disposition",
     `attachment; filename="payslip-${payroll.month}-${payroll.year}.pdf"`,
@@ -211,51 +187,37 @@ export const downloadPayslip = catchAsync(async (req, res, next) => {
   doc.pipe(res);
 
   doc.fontSize(20).text("PAYSLIP", { align: "center" });
-
   doc.moveDown();
-
   doc.fontSize(12);
 
   doc.text(
-    `Employee: ${payroll.employee.user.firstName} ${payroll.employee.user.lastName}`,
+    `Employee: ${payroll.employee.firstName} ${payroll.employee.lastName}`,
   );
-
-  doc.text(`Email: ${payroll.employee.user.email}`);
-  doc.text(`Department: ${payroll.employee.department.name}`);
+  doc.text(`Email: ${payroll.employee.email}`);
+  doc.text(`Department: ${employeeProfile?.department?.name || "N/A"}`);
 
   doc.moveDown();
-
   doc.text(`Month: ${payroll.month}`);
   doc.text(`Year: ${payroll.year}`);
 
   doc.moveDown();
-
   doc.fontSize(14).text("Salary Details");
-
   doc.moveDown();
-
   doc.fontSize(12);
 
   doc.text(`Base Salary: ${payroll.baseSalary}`);
-
   doc.text(`Transport Allowance: ${payroll.allowances?.transport || 0}`);
-
   doc.text(`Housing Allowance: ${payroll.allowances?.housing || 0}`);
-
   doc.text(`Medical Allowance: ${payroll.allowances?.medical || 0}`);
 
   doc.moveDown();
-
   doc.text(`Absence Deduction: ${payroll.deductions?.absence || 0}`);
-
   doc.text(`Late Deduction: ${payroll.deductions?.late || 0}`);
 
   doc.moveDown();
-
   doc.fontSize(16).text(`Net Salary: ${payroll.netSalary}`);
 
   doc.moveDown();
-
   doc.fontSize(12).text(`Status: ${payroll.status}`);
 
   if (payroll.paidAt) {
@@ -267,26 +229,22 @@ export const downloadPayslip = catchAsync(async (req, res, next) => {
 export const getPayrollById = catchAsync(async (req, res, next) => {
   const payroll = await Payroll.findById(req.params.id).populate({
     path: "employee",
-    populate: [
-      {
-        path: "user",
-        select: "firstName lastName email",
-      },
-      {
-        path: "department",
-        select: "name",
-      },
-    ],
+    select: "firstName lastName email",
   });
 
   if (!payroll) {
     return next(new AppError("Payroll not found", 404));
   }
 
+  const employeeProfile = await Employee.findOne({
+    user: payroll.employee._id,
+  }).populate({ path: "department", select: "name" });
+
   res.status(200).json({
     status: "success",
     data: {
       payroll,
+      department: employeeProfile?.department || null,
     },
   });
 });
@@ -299,7 +257,7 @@ export const markPayrollAsPaid = catchAsync(async (req, res, next) => {
     const payroll = await Payroll.findById(req.params.id)
       .populate({
         path: "employee",
-        select: "user",
+        select: "firstName lastName email",
       })
       .session(session);
 
@@ -320,8 +278,8 @@ export const markPayrollAsPaid = catchAsync(async (req, res, next) => {
     const notification = await Notification.create(
       [
         {
-          recipient: payroll.employee.user,
-          type: "payroll",
+          recipient: payroll.employee.id,
+          type: "payslip_ready",
           message: `Your payroll for ${payroll.month}/${payroll.year} has been paid.`,
           relatedId: payroll._id,
         },
